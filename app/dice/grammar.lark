@@ -1,0 +1,19 @@
+?expr: expr "+" term  -> add
+     | expr "-" term  -> sub
+     | term
+
+?term: term "*" atom  -> mul
+     | term "/" atom  -> div
+     | atom
+
+?atom: dice
+     | "(" expr ")"
+     | NUMBER         -> number
+     | "-" atom       -> neg
+
+dice: NUMBER _D NUMBER  -> dice_full
+    | _D NUMBER         -> dice_short
+
+_D: /[dдDД]/
+NUMBER: /[0-9]+/
+%ignore /\s+/
