@@ -1,12 +1,15 @@
 [project]
 name = "danika"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Discord bot to roll dice, provide information for various TTRPG systems, and fun."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "discord-py>=2.7.1",
-    "loguru>=0.7.3",
+    "discord-py==2.7.1",
+    "lark>=1.2",
+    "loguru==0.7.3",
+    "pydantic==2.12.5",
+    "pydantic-settings==2.13.1",
 ]
 
 [dependency-groups]
