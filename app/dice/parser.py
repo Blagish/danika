@@ -12,16 +12,28 @@ _evaluator = DiceEvaluator()
 
 
 def roll(expression: str) -> RollResult:
-    """Parse and evaluate a dice expression. Returns a RollResult."""
+    """Parse and evaluate a dice expression. Returns a RollResult.
+
+    Never raises — ошибки накапливаются в RollResult.errors.
+    """
+    expr = expression.strip()
     try:
-        tree = _parser.parse(expression.strip())
-    except UnexpectedInput as e:
-        raise ValueError(f"Не понял выражение: `{expression}`") from e
+        tree = _parser.parse(expr)
+    except UnexpectedInput:
+        return RollResult(
+            total=0,
+            expression=expr,
+            errors=[f"Не понял выражение: `{expr}`"],
+        )
 
     try:
         result: RollResult = _evaluator.transform(tree)
     except VisitError as e:
-        raise e.orig_exc from None
+        return RollResult(
+            total=0,
+            expression=expr,
+            errors=[str(e.orig_exc)],
+        )
 
-    result.expression = expression.strip()
+    result.expression = expr
     return result

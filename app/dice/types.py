@@ -23,3 +23,6 @@ class RollResult:
     # Форматтер показывает строку "->" только если dice_count >= 1.
     dice_count: int = 0
     expression: str = ""
+    # Ошибки, собранные в процессе парсинга и вычисления.
+    # Парсер не крашится — накапливает сюда сообщения для вывода пользователю.
+    errors: list[str] = field(default_factory=list)

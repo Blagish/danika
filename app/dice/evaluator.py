@@ -11,9 +11,13 @@ MAX_DICE_SIDES = 10_000
 
 def _roll(count: int, sides: int) -> RollResult:
     if count < 1 or count > MAX_DICE_COUNT:
-        raise ValueError(f"Количество кубов должно быть от 1 до {MAX_DICE_COUNT}")
+        return RollResult(
+            total=0, errors=[f"Количество кубов должно быть от 1 до {MAX_DICE_COUNT}"]
+        )
     if sides < 1 or sides > MAX_DICE_SIDES:
-        raise ValueError(f"Количество граней должно быть от 1 до {MAX_DICE_SIDES}")
+        return RollResult(
+            total=0, errors=[f"Количество граней должно быть от 1 до {MAX_DICE_SIDES}"]
+        )
     rolls = [random.randint(1, sides) for _ in range(count)]
     return RollResult(total=sum(rolls), rolls=rolls)
 
@@ -21,9 +25,13 @@ def _roll(count: int, sides: int) -> RollResult:
 def _roll_pick(sides: int, n: int, take: int, highest: bool) -> RollResult:
     """Roll n dice, keep `take` highest (or lowest). Abstraction for adv/dis and future Nk/Nd notation."""
     if n < 1 or n > MAX_DICE_COUNT:
-        raise ValueError(f"Количество кубов должно быть от 1 до {MAX_DICE_COUNT}")
+        return RollResult(
+            total=0, errors=[f"Количество кубов должно быть от 1 до {MAX_DICE_COUNT}"]
+        )
     if sides < 1 or sides > MAX_DICE_SIDES:
-        raise ValueError(f"Количество граней должно быть от 1 до {MAX_DICE_SIDES}")
+        return RollResult(
+            total=0, errors=[f"Количество граней должно быть от 1 до {MAX_DICE_SIDES}"]
+        )
     rolls = [random.randint(1, sides) for _ in range(n)]
     selected = sorted(rolls, reverse=highest)[:take]
     return RollResult(total=sum(selected), rolls=rolls)
@@ -61,7 +69,11 @@ class DiceEvaluator(Transformer):
 
     def dice_full(self, count: Token, sides: RollResult) -> RollResult:
         n = int(count)
+        errors = sides.errors[:]
         result = _roll(n, int(sides.total))
+        errors.extend(result.errors)
+        if errors:
+            return RollResult(total=0, expr_trace="0", errors=errors)
         trace = " + ".join(_bold(r) for r in result.rolls)
         if n >= 2:
             return RollResult(
@@ -81,7 +93,11 @@ class DiceEvaluator(Transformer):
         )
 
     def dice_short(self, sides: RollResult) -> RollResult:
+        errors = sides.errors[:]
         result = _roll(1, int(sides.total))
+        errors.extend(result.errors)
+        if errors:
+            return RollResult(total=0, expr_trace="0", errors=errors)
         return RollResult(
             total=result.total,
             rolls=result.rolls,
@@ -91,7 +107,11 @@ class DiceEvaluator(Transformer):
         )
 
     def dice_adv(self, sides: RollResult) -> RollResult:
+        errors = sides.errors[:]
         result = _roll_pick(int(sides.total), n=2, take=1, highest=True)
+        errors.extend(result.errors)
+        if errors:
+            return RollResult(total=0, expr_trace="0", errors=errors)
         trace = _adv_trace(result.rolls, highest=True)
         return RollResult(
             total=result.total,
@@ -102,7 +122,11 @@ class DiceEvaluator(Transformer):
         )
 
     def dice_dis(self, sides: RollResult) -> RollResult:
+        errors = sides.errors[:]
         result = _roll_pick(int(sides.total), n=2, take=1, highest=False)
+        errors.extend(result.errors)
+        if errors:
+            return RollResult(total=0, expr_trace="0", errors=errors)
         trace = _adv_trace(result.rolls, highest=False)
         return RollResult(
             total=result.total,
@@ -116,6 +140,7 @@ class DiceEvaluator(Transformer):
         total = a.total + b.total
         rolls = a.rolls + b.rolls
         count = a.dice_count + b.dice_count
+        errors = a.errors + b.errors
 
         # Если одна сторона — незавёрнутая группа, а другая не имеет своих шагов
         # (константа или одиночный куб), дописываем её в трейс группы.
@@ -128,6 +153,7 @@ class DiceEvaluator(Transformer):
                 dice_steps=[DiceStep(f"{step.trace} + {b.expr_trace}", total)],
                 expr_trace=str(total),
                 dice_count=count,
+                errors=errors,
             )
         if _is_ungrouped(b) and not a.dice_steps:
             step = b.dice_steps[0]
@@ -137,6 +163,7 @@ class DiceEvaluator(Transformer):
                 dice_steps=[DiceStep(f"{a.expr_trace} + {step.trace}", total)],
                 expr_trace=str(total),
                 dice_count=count,
+                errors=errors,
             )
 
         # В остальных случаях — два независимых набора шагов (два mul-контекста и т.п.)
@@ -146,12 +173,14 @@ class DiceEvaluator(Transformer):
             dice_steps=a.dice_steps + b.dice_steps,
             expr_trace=f"{a.expr_trace} + {b.expr_trace}",
             dice_count=count,
+            errors=errors,
         )
 
     def sub(self, a: RollResult, b: RollResult) -> RollResult:
         total = a.total - b.total
         rolls = a.rolls + b.rolls
         count = a.dice_count + b.dice_count
+        errors = a.errors + b.errors
 
         if _is_ungrouped(a) and not b.dice_steps:
             step = a.dice_steps[0]
@@ -161,6 +190,7 @@ class DiceEvaluator(Transformer):
                 dice_steps=[DiceStep(f"{step.trace} - {b.expr_trace}", total)],
                 expr_trace=str(total),
                 dice_count=count,
+                errors=errors,
             )
 
         return RollResult(
@@ -169,6 +199,7 @@ class DiceEvaluator(Transformer):
             dice_steps=a.dice_steps + b.dice_steps,
             expr_trace=f"{a.expr_trace} - {b.expr_trace}",
             dice_count=count,
+            errors=errors,
         )
 
     def mul(self, a: RollResult, b: RollResult) -> RollResult:
@@ -183,19 +214,32 @@ class DiceEvaluator(Transformer):
             dice_steps=a.dice_steps + b.dice_steps,
             expr_trace=f"{a_expr} * {b_expr}",
             dice_count=a.dice_count + b.dice_count,
+            errors=a.errors + b.errors,
         )
 
     def div(self, a: RollResult, b: RollResult) -> RollResult:
-        result = a.total / b.total
-        total = int(result) if result == int(result) else round(result, 5)
+        errors = a.errors + b.errors
         a_expr = _parens(a.expr_trace)
         b_expr = _parens(b.expr_trace)
+        if b.total == 0:
+            errors.append("Деление на ноль")
+            return RollResult(
+                total=0,
+                rolls=a.rolls + b.rolls,
+                dice_steps=a.dice_steps + b.dice_steps,
+                expr_trace=f"{a_expr} / {b_expr}",
+                dice_count=a.dice_count + b.dice_count,
+                errors=errors,
+            )
+        result = a.total / b.total
+        total = int(result) if result == int(result) else round(result, 5)
         return RollResult(
             total=total,
             rolls=a.rolls + b.rolls,
             dice_steps=a.dice_steps + b.dice_steps,
             expr_trace=f"{a_expr} / {b_expr}",
             dice_count=a.dice_count + b.dice_count,
+            errors=errors,
         )
 
     def neg(self, a: RollResult) -> RollResult:
@@ -212,4 +256,5 @@ class DiceEvaluator(Transformer):
             dice_steps=a.dice_steps,
             expr_trace=new_trace,
             dice_count=a.dice_count,
+            errors=a.errors,
         )

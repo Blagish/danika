@@ -267,24 +267,24 @@ class TestTraces:
 
 class TestValidation:
     def test_too_many_dice(self):
-        with pytest.raises(ValueError):
-            roll("200d6")
+        r = roll("200d6")
+        assert r.errors
 
     def test_too_few_sides(self):
-        with pytest.raises(ValueError):
-            roll("d0")
+        r = roll("d0")
+        assert r.errors
 
     def test_too_many_sides(self):
-        with pytest.raises(ValueError):
-            roll("d99999")
+        r = roll("d99999")
+        assert r.errors
 
     def test_invalid_expression(self):
-        with pytest.raises(ValueError):
-            roll("abc")
+        r = roll("abc")
+        assert r.errors
 
     def test_empty_expression(self):
-        with pytest.raises(ValueError):
-            roll("")
+        r = roll("")
+        assert r.errors
 
     def test_division_preserves_precision(self):
         r = roll("1/3")
