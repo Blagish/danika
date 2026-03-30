@@ -11,6 +11,19 @@ class DiceStep:
 
 @dataclass
 class RollResult:
+    """
+    Результат броска кубиков.
+
+    Attributes:
+        total: int | float  # Общий результат броска.
+        rolls: list[int]  # Список отдельных бросков кубиков.
+        dice_steps: list[DiceStep]  # Группы кубиков с 2+ кубами, каждая получает свою строку "->".
+        expr_trace: str  # Арифметическое выражение с подставленными сабтоталами / инлайн-кубами.
+        dice_count: int  # Общее количество кубиков в броске.
+        expression: str  # Исходное арифметическое выражение.
+        errors: list[str]  # Список ошибок, возникших при обработке выражения.
+    """
+
     total: int | float
     rolls: list[int] = field(default_factory=list)
     # Группы с 2+ кубами: каждая получит свою строку "->".

@@ -12,10 +12,9 @@ _evaluator = DiceEvaluator()
 
 
 def roll(expression: str) -> RollResult:
-    """Parse and evaluate a dice expression. Returns a RollResult.
+    """Парсит и вычисляет выражение с броском кубиков. Возвращает RollResult.
 
-    Never raises — ошибки накапливаются в RollResult.errors.
-    """
+    Ошибки хранятся в RollResult.errors."""
     expr = expression.strip()
     try:
         tree = _parser.parse(expr)
@@ -23,7 +22,7 @@ def roll(expression: str) -> RollResult:
         return RollResult(
             total=0,
             expression=expr,
-            errors=[f"Не понял выражение: `{expr}`"],
+            errors=[f"Не распознала выражение: `{expr}`"],
         )
 
     try:

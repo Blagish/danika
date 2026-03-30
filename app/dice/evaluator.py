@@ -23,7 +23,7 @@ def _roll(count: int, sides: int) -> RollResult:
 
 
 def _roll_pick(sides: int, n: int, take: int, highest: bool) -> RollResult:
-    """Roll n dice, keep `take` highest (or lowest). Abstraction for adv/dis and future Nk/Nd notation."""
+    """Кидает n кубов и оставляет `take` самых высоких (или низких) бросков. Абстракция для преимущества/помехи и будущих Nk/Nd нотаций."""
     if n < 1 or n > MAX_DICE_COUNT:
         return RollResult(
             total=0, errors=[f"Количество кубов должно быть от 1 до {MAX_DICE_COUNT}"]
@@ -42,14 +42,14 @@ def _bold(n: int) -> str:
 
 
 def _parens(trace: str) -> str:
-    """Wrap in parens if trace has additive ops or leading minus (for use inside * and /)."""
+    """Оборачивает в скобки, если trace содержит операции сложения/вычитания или начинается как отрицательное число (для использования внутри * и /)."""
     if " + " in trace or " - " in trace or trace.startswith("-"):
         return f"({trace})"
     return trace
 
 
 def _adv_trace(rolls: list[int], highest: bool) -> str:
-    """Format advantage/disadvantage rolls: winner bold, loser strikethrough."""
+    """Форматирует броски преимущества/помехи: выигравший бросок жирным, проигравший зачеркнутым."""
     winner, loser = (max(rolls), min(rolls)) if highest else (min(rolls), max(rolls))
     prefix = "a" if highest else "d"
     return f"{prefix}[**{winner}**|~~{loser}~~]"

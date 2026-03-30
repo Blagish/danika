@@ -1,16 +1,8 @@
 from discord import app_commands
 from discord.ext import commands
 
-from app.dice import RollResult, roll
-
-
-def format_result(result: RollResult) -> str:
-    rolls_str = ", ".join(str(r) for r in result.rolls)
-    parts = [f"🎲 **{result.expression}**"]
-    if rolls_str:
-        parts.append(f"[{rolls_str}]")
-    parts.append(f"= **{result.total}**")
-    return " ".join(parts)
+from app.dice import roll
+from app.formatters.dice import RollResponse
 
 
 class Dice(commands.Cog):
@@ -28,7 +20,7 @@ class Dice(commands.Cog):
     async def roll(self, ctx: commands.Context, *, expression: str) -> None:
         try:
             result = roll(expression)
-            await ctx.reply(format_result(result))
+            await ctx.reply(str(RollResponse.from_roll(result)))
         except ValueError as e:
             await ctx.reply(str(e), ephemeral=True)
 
