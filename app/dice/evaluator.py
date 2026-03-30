@@ -199,10 +199,17 @@ class DiceEvaluator(Transformer):
         )
 
     def neg(self, a: RollResult) -> RollResult:
+        inner = a.expr_trace
+        if inner.startswith("-") and " + " not in inner and " - " not in inner:
+            new_trace = inner[1:]
+        elif " + " in inner or " - " in inner:
+            new_trace = f"-({inner})"
+        else:
+            new_trace = f"-{inner}"
         return RollResult(
             total=-a.total,
             rolls=a.rolls,
             dice_steps=a.dice_steps,
-            expr_trace=f"-{a.expr_trace}",
+            expr_trace=new_trace,
             dice_count=a.dice_count,
         )
