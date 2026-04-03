@@ -13,6 +13,7 @@ class Config(BaseSettings):
     discord_id: str = ""
     discord_token: str = ""
     command_prefix: str = "/"
+    dev_guild_id: int | None = None
 
 
 config = Config()
