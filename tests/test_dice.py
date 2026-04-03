@@ -262,6 +262,53 @@ class TestTraces:
 
 
 # ---------------------------------------------------------------------------
+# Pick (NdXpM)
+# ---------------------------------------------------------------------------
+
+class TestPick:
+    def test_pick_highest(self, monkeypatch):
+        """4d6p2: бросить 4d6, взять 2 наибольших."""
+        vals = iter([3, 1, 5, 2])
+        monkeypatch.setattr("app.dice.evaluator.random.randint", lambda a, b: next(vals))
+        r = roll("4d6p2")
+        assert r.total == 8  # 5 + 3
+        assert r.rolls == [3, 1, 5, 2]
+        assert r.dice_count == 4
+
+    def test_pick_range(self):
+        for _ in range(50):
+            r = roll("4d6p3")
+            assert 3 <= r.total <= 18
+
+    def test_pick_cyrillic(self):
+        for _ in range(50):
+            r = roll("4д6п3")
+            assert 3 <= r.total <= 18
+
+    def test_pick_trace(self, monkeypatch):
+        vals = iter([3, 1, 5, 2])
+        monkeypatch.setattr("app.dice.evaluator.random.randint", lambda a, b: next(vals))
+        r = roll("4d6p2")
+        assert len(r.dice_steps) == 1
+        assert r.dice_steps[0].trace == "[**3**] + ~~1~~ + [**5**] + ~~2~~"
+        assert r.dice_steps[0].subtotal == 8
+
+    def test_pick_with_modifier(self, monkeypatch):
+        vals = iter([3, 1, 5, 2])
+        monkeypatch.setattr("app.dice.evaluator.random.randint", lambda a, b: next(vals))
+        r = roll("4d6p2+10")
+        assert r.total == 18
+
+    def test_pick_invalid_take_too_high(self):
+        r = roll("4d6p4")
+        assert r.errors
+
+    def test_pick_invalid_take_zero(self):
+        r = roll("4d6p0")
+        assert r.errors
+
+
+# ---------------------------------------------------------------------------
 # Валидация и ошибки
 # ---------------------------------------------------------------------------
 

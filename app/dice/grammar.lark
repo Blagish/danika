@@ -11,7 +11,8 @@
      | NUMBER         -> number
      | "-" atom       -> neg
 
-dice: NUMBER _D dice_sides  -> dice_full
+dice: NUMBER _D dice_sides _P NUMBER -> dice_pick
+    | NUMBER _D dice_sides  -> dice_full
     | _DD dice_sides        -> dice_dis
     | _AD dice_sides        -> dice_adv
     | _D dice_sides         -> dice_short
@@ -25,5 +26,6 @@ dice: NUMBER _D dice_sides  -> dice_full
 _AD.2: /[aаAА][dдDДkкKК]/
 _DD.2: /[dдDД][dдDД]/
 _D.1:  /[dдDДkкKК]/
+_P:    /[pпPП]/
 NUMBER: /[0-9]+/
 %ignore /\s+/

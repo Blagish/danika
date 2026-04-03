@@ -48,6 +48,20 @@ def _parens(trace: str) -> str:
     return trace
 
 
+def _pick_trace(rolls: list[int], take: int, highest: bool) -> str:
+    """Форматирует броски pick: взятые кубы жирным, отброшенные зачёркнутым."""
+    selected = sorted(rolls, reverse=highest)[:take]
+    remaining = list(selected)
+    parts = []
+    for r in rolls:
+        if r in remaining:
+            remaining.remove(r)
+            parts.append(_bold(r))
+        else:
+            parts.append(f"~~{r}~~")
+    return " + ".join(parts)
+
+
 def _adv_trace(rolls: list[int], highest: bool) -> str:
     """Форматирует броски преимущества/помехи: выигравший бросок жирным, проигравший зачеркнутым."""
     winner, loser = (max(rolls), min(rolls)) if highest else (min(rolls), max(rolls))
@@ -66,6 +80,26 @@ class DiceEvaluator(Transformer):
     def number(self, n: Token) -> RollResult:
         s = str(int(n))
         return RollResult(total=int(n), expr_trace=s, dice_count=0)
+
+    def dice_pick(self, count: Token, sides: RollResult, take: Token) -> RollResult:
+        n = int(count)
+        t = int(take)
+        errors = sides.errors[:]
+        if t < 1 or t >= n:
+            errors.append(f"p должно быть от 1 до {n - 1} (бросается {n} кубов)")
+            return RollResult(total=0, expr_trace="0", errors=errors)
+        result = _roll_pick(int(sides.total), n=n, take=t, highest=True)
+        errors.extend(result.errors)
+        if errors:
+            return RollResult(total=0, expr_trace="0", errors=errors)
+        trace = _pick_trace(result.rolls, t, highest=True)
+        return RollResult(
+            total=result.total,
+            rolls=result.rolls,
+            dice_steps=[DiceStep(trace=trace, subtotal=result.total)],
+            expr_trace=str(result.total),
+            dice_count=n,
+        )
 
     def dice_full(self, count: Token, sides: RollResult) -> RollResult:
         n = int(count)

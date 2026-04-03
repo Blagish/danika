@@ -39,7 +39,7 @@ class RollResponse:
     def __str__(self) -> str:
         comment = f" для *{self.comment}*" if self.comment else ""
         command = self.command.replace("*", r"\*")
-        return f"{self.opening.value} {command}{comment}{self._steps()}\n> **= {self.result}**{self._errors()}"
+        return f"{self.opening.value} {command}{comment}{self._steps()}\n> **=** `{self.result}`{self._errors()}"
 
     def _steps(self) -> str:
         return "".join(f"\n> {self.line_start} {line}" for line in self.lines)
