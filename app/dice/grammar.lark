@@ -23,7 +23,7 @@ dice: NUMBER _D dice_sides _P NUMBER -> dice_pick
            | NUMBER -> number
 
 // _AD и _DD имеют приоритет 2 — лексер выбирает их раньше одиночного _D
-_AD.2: /[aаAА][dдDДkкKК]/
+_AD.2: /[aаAА][dдDД]/
 _DD.2: /[dдDД][dдDД]/
 _D.1:  /[dдDДkкKК]/
 _P:    /[pпPП]/
