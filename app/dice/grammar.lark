@@ -2,7 +2,8 @@
      | expr "-" term  -> sub
      | term
 
-?term: term "*" atom  -> mul
+?term: term "*" atom   -> mul
+     | term "//" atom -> truediv
      | term "/" atom  -> div
      | atom
 
