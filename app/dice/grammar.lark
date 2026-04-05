@@ -11,21 +11,21 @@
      | NUMBER         -> number
      | "-" atom       -> neg
 
-dice: NUMBER _D dice_sides _P NUMBER -> dice_pick
-    | NUMBER _D dice_sides  -> dice_full
-    | _DD dice_sides        -> dice_dis
-    | _AD dice_sides        -> dice_adv
-    | _D dice_sides         -> dice_short
+dice: calculated_expr _D calculated_expr _P NUMBER -> dice_pick
+    | calculated_expr _D calculated_expr           -> dice_full
+    | _DD calculated_expr                          -> dice_dis
+    | _AD calculated_expr                          -> dice_adv
+    | _D calculated_expr                           -> dice_short
 
 // Стороны куба: число или выражение в скобках. Bare dice намеренно исключён —
 // dd20 однозначно читается как помеха, а d(d20) работает через скобки.
-?dice_sides: "(" expr ")"
-           | NUMBER -> number
+?calculated_expr: "(" expr ")"
+                | NUMBER -> number
 
 // _AD и _DD имеют приоритет 2 — лексер выбирает их раньше одиночного _D
 _AD.2: /[aаAА][dдDД]/
 _DD.2: /[dдDД][dдDД]/
-_D.1:  /[dдDДkкKК]/
+_D.1:  /[dдDД]/
 _P:    /[pпPП]/
 NUMBER: /[0-9]+/
 %ignore /\s+/

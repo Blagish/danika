@@ -1,14 +1,14 @@
 import pytest
 
 from app.dice import roll
-from app.dice.types import RollResult
+from app.dice.types import ScalarResult
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def assert_result(r: RollResult, *, total=None, dice_count=None, num_rolls=None):
+def assert_result(r: ScalarResult, *, total=None, dice_count=None, num_rolls=None):
     if total is not None:
         assert r.total == total
     if dice_count is not None:

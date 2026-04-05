@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
-from app.dice import RollResult
+from app.dice import ScalarResult
 
 
 class Opening(Enum):
@@ -22,8 +22,8 @@ class RollResponse:
     errors: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_roll(cls, roll: RollResult) -> "RollResponse":
-        """Создает объект RollResponse из RollResult."""
+    def from_roll(cls, roll: ScalarResult) -> "RollResponse":
+        """Создает объект RollResponse из ScalarResult."""
         opening = Opening.ROLLING if roll.dice_count else Opening.COUNTING
         lines = [f"{step.trace} = {step.subtotal}" for step in roll.dice_steps]
         if roll.dice_count:
