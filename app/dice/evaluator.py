@@ -252,6 +252,9 @@ class DiceEvaluator(Transformer):
             errors=errors,
         )
 
+    def start(self, *items: ScalarResult) -> list[ScalarResult]:
+        return list(items)
+
     def neg(self, a: ScalarResult) -> ScalarResult:
         inner = a.expr_trace
         if inner.startswith("-") and " + " not in inner and " - " not in inner:

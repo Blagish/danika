@@ -1,3 +1,5 @@
+start: expr ("," expr)*
+
 ?expr: expr "+" term  -> add
      | expr "-" term  -> sub
      | term

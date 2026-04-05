@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
-from app.dice import ScalarResult
+from app.dice.types import ScalarResult
 
 
 class Opening(Enum):
@@ -11,7 +11,7 @@ class Opening(Enum):
 
 @dataclass
 class RollResponse:
-    """Форматированный ответ результата броска."""
+    """Форматированный ответ результата броска (одного или нескольких через запятую)."""
 
     opening: Opening
     command: str
@@ -22,18 +22,50 @@ class RollResponse:
     errors: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_roll(cls, roll: ScalarResult) -> "RollResponse":
-        """Создает объект RollResponse из ScalarResult."""
-        opening = Opening.ROLLING if roll.dice_count else Opening.COUNTING
-        lines = [f"{step.trace} = {step.subtotal}" for step in roll.dice_steps]
-        if roll.dice_count:
-            lines.append(roll.expr_trace)
+    def from_rolls(cls, rolls: list[ScalarResult], expression: str) -> "RollResponse":
+        """Создаёт один блок ответа из списка результатов.
+
+        Промежуточные шаги каждого выражения идут на отдельных строках.
+        Финальные строки `->` всех выражений объединяются через запятую.
+
+        Attributes:
+            rolls: Результаты вычисления каждого выражения.
+            expression: Полная строка, введённая пользователем.
+        """
+        opening = (
+            Opening.ROLLING if any(r.dice_count for r in rolls) else Opening.COUNTING
+        )
+
+        intermediate_lines: list[str] = []
+        final_parts: list[str] = []
+
+        for roll in rolls:
+            if roll.is_ungrouped:
+                per_roll_lines = [roll.dice_steps[0].trace]
+            else:
+                per_roll_lines = [
+                    f"{step.trace} = {step.subtotal}" for step in roll.dice_steps
+                ]
+                if roll.dice_count:
+                    per_roll_lines.append(roll.expr_trace)
+
+            if per_roll_lines:
+                intermediate_lines.extend(per_roll_lines[:-1])
+                final_parts.append(per_roll_lines[-1])
+
+        all_lines = intermediate_lines
+        if final_parts:
+            all_lines.append(", ".join(final_parts))
+
+        result = ", ".join(str(r.total) for r in rolls)
+        errors = [e for r in rolls for e in r.errors]
+
         return cls(
             opening=opening,
-            command=roll.expression,
-            result=str(roll.total),
-            lines=lines,
-            errors=roll.errors,
+            command=expression,
+            result=result,
+            lines=all_lines,
+            errors=errors,
         )
 
     def __str__(self) -> str:

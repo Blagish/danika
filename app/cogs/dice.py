@@ -19,8 +19,9 @@ class Dice(commands.Cog):
     )
     async def roll(self, ctx: commands.Context, *, expression: str) -> None:
         try:
-            result = roll(expression)
-            await ctx.reply(str(RollResponse.from_roll(result)))
+            results = roll(expression)
+            response = str(RollResponse.from_rolls(results, expression))
+            await ctx.reply(response)
         except ValueError as e:
             await ctx.reply(str(e), ephemeral=True)
 
