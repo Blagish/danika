@@ -11,6 +11,7 @@ config = get_config()
 COGS: list[str] = [
     "app.cogs.general",
     "app.cogs.dice",
+    "app.cogs.status",
 ]
 
 
