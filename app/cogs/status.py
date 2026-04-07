@@ -8,7 +8,7 @@ _DATA_DIR = Path(__file__).parent.parent / "data" / "status"
 
 
 def _load_lines(filename: str) -> list[str]:
-    """Load non-empty lines from a data file."""
+    """Загружает непустые строки из файла данных."""
     path = _DATA_DIR / filename
     return [line.strip() for line in path.read_text().splitlines() if line.strip()]
 
@@ -26,7 +26,7 @@ class Status(commands.Cog):
         self.rotate_status.cancel()
 
     async def _set_random_status(self) -> str:
-        """Pick and apply a random status. Returns the resulting name string."""
+        """Применяет случайный статус. Возвращает итоговую строку."""
         template = random.choice(self.templates)
         system = random.choice(self.systems)
         name = template.format(system=system, session=random.randint(2, 100))
@@ -41,9 +41,9 @@ class Status(commands.Cog):
     @commands.command(name="reroll-status")
     @commands.is_owner()
     async def reroll_status(self, ctx: commands.Context) -> None:
-        """Force an immediate status reroll. Bot owner only."""
+        """Меняет статус на случайный. Только для владельца бота."""
         name = await self._set_random_status()
-        await ctx.reply(f"Status updated: **Playing {name}**")
+        await ctx.reply(f"Статус обновлен: **{name}**")
 
     @rotate_status.before_loop
     async def before_rotate(self) -> None:
