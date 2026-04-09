@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from discord import Embed
 
-from app.systems.dnd5e import Dnd5eSpell
+from app.systems.dnd5e_wikidot import Dnd5eWikidotSpell
 
 _LEVEL_NAMES = {
     0: "Cantrip",
@@ -22,7 +22,7 @@ _FOOTER_PIC = (
 )
 
 
-def format_dnd5e_spell(spell: Dnd5eSpell, colour: int) -> Embed:
+def format_dnd5e_wikidot_spell(spell: Dnd5eWikidotSpell, colour: int) -> Embed:
     """Эмбед для заклинания D&D 5e.
 
     Attributes:

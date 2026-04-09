@@ -8,7 +8,7 @@ from discord import Embed, app_commands
 from discord.ext import commands
 from loguru import logger
 
-from app.formatters.dnd5e import format_dnd5e_spell
+from app.formatters.dnd5e_wikidot import format_dnd5e_wikidot_spell
 from app.formatters.systems import (
     format_not_found,
     format_service_error,
@@ -16,7 +16,7 @@ from app.formatters.systems import (
     format_too_short,
 )
 from app.systems.base import SystemClient
-from app.systems.dnd5e import Dnd5eClient
+from app.systems.dnd5e_wikidot import Dnd5eWikidotClient
 from app.systems.types import ServiceUnavailableError, SpellMatch
 
 MIN_QUERY_LENGTH = 3
@@ -27,7 +27,7 @@ class Systems(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.dnd_en: Dnd5eClient = Dnd5eClient()
+        self.dnd_en: Dnd5eWikidotClient = Dnd5eWikidotClient()
         self.dnd_ru: SystemClient[Any] | None = None
         self.pf2: SystemClient[Any] | None = None
 
@@ -102,7 +102,7 @@ class Systems(commands.Cog):
         await interaction.response.defer()
         language = lang.value if lang else "en"
         client: SystemClient[Any] | None = self.dnd_ru if language == "ru" else self.dnd_en
-        await self._do_spell_lookup(interaction, client, name, format_dnd5e_spell)
+        await self._do_spell_lookup(interaction, client, name, format_dnd5e_wikidot_spell)
 
     # -- Pathfinder 2e --------------------------------------------------------
 

@@ -3,15 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from bs4 import BeautifulSoup, Tag
+from loguru import logger
 
 from app.systems.base import SiteSystemClient
 from app.systems.types import SpellMatch
+
+_log = logger.bind(module="dnd5e_wikidot")
 
 _ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]
 
 
 @dataclass
-class Dnd5eSpell:
+class Dnd5eWikidotSpell:
     """Заклинание D&D 5e (источник: dnd5e.wikidot.com).
 
     Attributes:
@@ -47,61 +50,74 @@ class Dnd5eSpell:
     concentration: bool = False
 
 
-class Dnd5eClient(SiteSystemClient[Dnd5eSpell]):
+_SPELLS_URL = "https://dnd5e.wikidot.com/spells"
+
+
+class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
     """Клиент для поиска заклинаний D&D 5e на dnd5e.wikidot.com."""
 
     system_name = "D&D 5e"
     colour = 0xB22222
 
     base_url = "https://dnd5e.wikidot.com"
-    search_url = "https://dnd5e.wikidot.com/spells"
 
-    async def search_spell(self, name: str) -> Dnd5eSpell | list[SpellMatch] | None:
-        """Поиск заклинания по названию.
-
-        Attributes:
-            name: Поисковый запрос (название или его часть).
+    async def _fetch_spell_list(self) -> dict[str, str]:
+        """Загружает полный список заклинаний со страницы /spells.
 
         Returns:
-            Dnd5eSpell: Точное совпадение.
+            Словарь ``{название: slug}``, например ``{"Fireball": "/spell:fireball"}``.
+        """
+        soup = await self._fetch(_SPELLS_URL)
+        spells: dict[str, str] = {}
+        for td in soup.find_all(lambda tag: tag and tag.name == "td" and tag.a):
+            if td.a is None:
+                continue
+            name = td.get_text().strip()
+            slug = str(td.a["href"])
+            if name and slug:
+                spells[name] = slug
+        return spells
+
+    async def search_spell(self, name: str) -> Dnd5eWikidotSpell | list[SpellMatch] | None:
+        """Поиск заклинания по названию с fuzzy-matching.
+
+        Attributes:
+            name: Поисковый запрос (название или его часть, опечатки допустимы).
+
+        Returns:
+            Dnd5eWikidotSpell: Единственное совпадение.
             list[SpellMatch]: Несколько кандидатов.
             None: Ничего не найдено.
 
         Raises:
             ServiceUnavailableError: Сайт недоступен.
         """
-        search_soup = await self._fetch(self.search_url, search=name)
-        name_lower = name.strip().lower()
+        spell_list = await self._get_spell_list()
 
-        # <td> ячейки с ссылками на заклинания, в тексте которых есть запрос
-        results: list[Tag] = search_soup.find_all(
-            lambda tag: tag and tag.name == "td" and tag.a and name_lower in tag.get_text().lower()
-        )
+        exact_slug = self._exact_slug(name.strip().lower())
+        if exact_slug:
+            spell_url = f"{self.base_url}{exact_slug}"
+            spell_soup = await self._fetch(spell_url)
+            return self._parse_spell_page(spell_soup, spell_url)
 
-        if not results:
+        matches = self._fuzzy_match(name, spell_list)
+        _log.debug(f"fuzzy '{name}': {[(m.name, m.slug) for m in matches]}")
+        if not matches:
             return None
+        if len(matches) > 1:
+            return matches
 
-        # Точное совпадение → берём сразу
-        exact = [r for r in results if r.get_text().strip().lower() == name_lower]
-        if exact:
-            chosen = exact[0]
-        elif len(results) == 1:
-            chosen = results[0]
-        else:
-            # Несколько вариантов → дизамбигуация
-            return [SpellMatch(name=t.get_text().strip(), slug=t.a["href"]) for t in results[:10]]
-
-        href: str = chosen.a["href"]  # e.g. "spell:fireball"
-        spell_url = f"{self.base_url}/{href}"
+        slug = matches[0].slug
+        spell_url = f"{self.base_url}{slug}"
         spell_soup = await self._fetch(spell_url)
         return self._parse_spell_page(spell_soup, spell_url)
 
     # -- парсинг страницы заклинания ------------------------------------------
 
-    def _parse_spell_page(self, soup: BeautifulSoup, url: str) -> Dnd5eSpell:
+    @staticmethod
+    def _parse_spell_page(soup: BeautifulSoup, url: str) -> Dnd5eWikidotSpell:
         title_el = soup.find("div", attrs={"class": "page-title"})
         name = title_el.get_text().strip() if title_el else ""
-        # ua = "(UA)" in name
 
         card = soup.find("div", attrs={"id": "page-content"})
         ps: list[Tag] = card.find_all("p") if card else []
@@ -127,15 +143,15 @@ class Dnd5eClient(SiteSystemClient[Dnd5eSpell]):
             # Уровень + школа (курсив)
             em = p.find(["em", "i"])
             if em and not in_desc and not casting_time:
-                level, school, ritual = self._parse_level_school(em.get_text())
+                level, school, ritual = Dnd5eWikidotClient._parse_level_school(em.get_text())
                 continue
 
             # Блок характеристик
             if any("casting time" in s for s in strongs):
-                casting_time = self._field_value(p, "casting time")
-                range_val = self._field_value(p, "range")
-                components = self._field_value(p, "components")
-                duration = self._field_value(p, "duration")
+                casting_time = Dnd5eWikidotClient._field_value(p, "casting time")
+                range_val = Dnd5eWikidotClient._field_value(p, "range")
+                components = Dnd5eWikidotClient._field_value(p, "components")
+                duration = Dnd5eWikidotClient._field_value(p, "duration")
                 if "(ritual)" in components.lower() or "(ritual)" in text.lower():
                     ritual = True
                 in_desc = True
@@ -159,7 +175,7 @@ class Dnd5eClient(SiteSystemClient[Dnd5eSpell]):
             if in_desc and higher_levels is None and text:
                 desc_parts.append(text)
 
-        return Dnd5eSpell(
+        return Dnd5eWikidotSpell(
             name=name,
             level=level,
             school=school,
