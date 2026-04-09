@@ -12,6 +12,7 @@ COGS: list[str] = [
     "app.cogs.general",
     "app.cogs.dice",
     "app.cogs.status",
+    "app.cogs.systems",
 ]
 
 
@@ -42,13 +43,9 @@ class Danika(commands.Bot):
             logger.info("Slash commands synced globally")
 
     async def on_ready(self) -> None:
-        logger.info(
-            f"Logged in as {self.user} (ID: {self.user.id if self.user else 'unknown'})"
-        )
+        logger.info(f"Logged in as {self.user} (ID: {self.user.id if self.user else 'unknown'})")
 
-    async def on_command_error(
-        self, ctx: commands.Context, error: commands.CommandError
-    ) -> None:
+    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         if hasattr(ctx.command, "on_error"):
             return
 
@@ -60,9 +57,7 @@ class Danika(commands.Bot):
         logger.error(f"Error in command {ctx.command}: {error}")
 
         if config.run_mode == "dev":
-            tb = "".join(
-                traceback.format_exception(type(error), error, error.__traceback__)
-            )
+            tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
             await ctx.reply(f"```\n{tb[:1900]}\n```", ephemeral=True)
         else:
             await ctx.reply("Что-то пошло не так.", ephemeral=True)

@@ -5,6 +5,8 @@ description = "A Discord bot to roll dice, provide information for various TTRPG
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "aiohttp>=3.11",
+    "beautifulsoup4>=4.13",
     "discord-py>=2.7",
     "lark>=1.2",
     "loguru>=0.7",
@@ -32,7 +34,6 @@ select = [
     "UP",    # pyupgrade
     "B",     # flake8-bugbear
     "SIM",   # flake8-simplify
-    "TCH",   # flake8-type-checking
 ]
 
 [tool.ruff.lint.isort]
