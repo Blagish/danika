@@ -114,8 +114,7 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
 
     # -- парсинг страницы заклинания ------------------------------------------
 
-    @staticmethod
-    def _parse_spell_page(soup: BeautifulSoup, url: str) -> Dnd5eWikidotSpell:
+    def _parse_spell_page(self, soup: BeautifulSoup, url: str) -> Dnd5eWikidotSpell:
         title_el = soup.find("div", attrs={"class": "page-title"})
         name = title_el.get_text().strip() if title_el else ""
 
@@ -143,15 +142,15 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
             # Уровень + школа (курсив)
             em = p.find(["em", "i"])
             if em and not in_desc and not casting_time:
-                level, school, ritual = Dnd5eWikidotClient._parse_level_school(em.get_text())
+                level, school, ritual = self._parse_level_school(em.get_text())
                 continue
 
             # Блок характеристик
             if any("casting time" in s for s in strongs):
-                casting_time = Dnd5eWikidotClient._field_value(p, "casting time")
-                range_val = Dnd5eWikidotClient._field_value(p, "range")
-                components = Dnd5eWikidotClient._field_value(p, "components")
-                duration = Dnd5eWikidotClient._field_value(p, "duration")
+                casting_time = self._field_value(p, "casting time")
+                range_val = self._field_value(p, "range")
+                components = self._field_value(p, "components")
+                duration = self._field_value(p, "duration")
                 if "(ritual)" in components.lower() or "(ritual)" in text.lower():
                     ritual = True
                 in_desc = True
