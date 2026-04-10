@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from bs4 import BeautifulSoup, Tag
@@ -50,9 +51,6 @@ class Dnd5eWikidotSpell:
     concentration: bool = False
 
 
-_SPELLS_URL = "https://dnd5e.wikidot.com/spells"
-
-
 class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
     """Клиент для поиска заклинаний D&D 5e на dnd5e.wikidot.com."""
 
@@ -67,10 +65,10 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
         Returns:
             Словарь ``{название: slug}``, например ``{"Fireball": "/spell:fireball"}``.
         """
-        soup = await self._fetch(_SPELLS_URL)
+        soup = await self._fetch(f"{self.base_url}/spells")
         spells: dict[str, str] = {}
-        for td in soup.find_all(lambda tag: tag and tag.name == "td" and tag.a):
-            if td.a is None:
+        for td in soup.find_all("td"):
+            if not td.a:
                 continue
             name = td.get_text().strip()
             slug = str(td.a["href"])
@@ -222,3 +220,113 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
                         parts.append(str(sib))
                 return "".join(parts).strip().strip(",").strip()
         return ""
+
+
+class Dnd2024WikidotClient(Dnd5eWikidotClient):
+    """Клиент для поиска заклинаний D&D 5e (2024) на dnd2024.wikidot.com."""
+
+    system_name = "D&D 5e (2024)"
+
+    base_url = "http://dnd2024.wikidot.com"
+
+    def _parse_spell_page(self, soup: BeautifulSoup, url: str) -> Dnd5eWikidotSpell:
+        title_el = soup.find("div", attrs={"class": "page-title"})
+        name = title_el.get_text().strip() if title_el else ""
+
+        card = soup.find("div", attrs={"id": "page-content"})
+        ps: list[Tag] = card.find_all("p") if card else []
+
+        source: str | None = None
+        if ps:
+            raw = ps[0].get_text().strip()
+            if raw.lower().startswith("source:"):
+                source = raw[len("source:") :].strip()
+            elif raw.lower().startswith("source"):
+                source = raw[len("source") :].strip()
+
+        level, school, ritual = 0, "", False
+        casting_time = range_val = components = duration = ""
+        desc_parts: list[str] = []
+        higher_levels: str | None = None
+        classes: list[str] = []
+        in_desc = False
+
+        for p in ps[1:]:
+            text = p.get_text(" ", strip=True)
+            strongs = [s.get_text().lower() for s in p.find_all("strong")]
+
+            # Уровень + школа + классы (курсив)
+            em = p.find(["em", "i"])
+            if em and not in_desc and not casting_time:
+                level, school, classes = self._parse_level_school_2024(em.get_text())
+                continue
+
+            # Блок характеристик
+            if any("casting time" in s for s in strongs):
+                casting_time = self._field_value(p, "casting time")
+                range_val = self._field_value(p, "range")
+                components = self._field_value(p, "components")
+                duration = self._field_value(p, "duration")
+                ritual = "ritual" in casting_time.lower()
+                in_desc = True
+                continue
+
+            # Using a Higher-Level Spell Slot / Cantrip Upgrade
+            if any(k in s for s in strongs for k in ("higher-level spell slot", "cantrip upgrade")):
+                hl = text
+                for prefix in (
+                    "Using a Higher-Level Spell Slot.",
+                    "Using a Higher-Level Spell Slot:",
+                    "Cantrip Upgrade.",
+                    "Cantrip Upgrade:",
+                ):
+                    if hl.startswith(prefix):
+                        hl = hl[len(prefix) :].strip()
+                higher_levels = hl
+                continue
+
+            if in_desc and higher_levels is None and text:
+                desc_parts.append(text)
+
+        return Dnd5eWikidotSpell(
+            name=name,
+            level=level,
+            school=school,
+            casting_time=casting_time,
+            range=range_val,
+            components=components,
+            duration=duration,
+            classes=classes,
+            description="\n\n".join(desc_parts),
+            url=url,
+            higher_levels=higher_levels,
+            source=source,
+            ritual=ritual,
+            concentration="concentration" in duration.lower(),
+        )
+
+    @staticmethod
+    def _parse_level_school_2024(text: str) -> tuple[int, str, list[str]]:
+        """Разбирает «Level 3 Evocation (Sorcerer, Wizard)» или «Evocation Cantrip (...)»."""
+        text = text.strip()
+
+        # Классы в скобках
+        classes: list[str] = []
+        m_classes = re.search(r"\(([^)]+)\)", text)
+        if m_classes:
+            classes = [c.strip() for c in m_classes.group(1).split(",") if c.strip()]
+            text = text[: m_classes.start()].strip()
+
+        text_lower = text.lower()
+
+        # "Evocation Cantrip"
+        if "cantrip" in text_lower:
+            school = text_lower.replace("cantrip", "").strip().title()
+            return 0, school, classes
+
+        # "Level 3 Evocation"
+        m = re.match(r"level\s+(\d+)\s+(.+)", text_lower)
+        if m:
+            return int(m.group(1)), m.group(2).strip().title(), classes
+
+        return 0, text.title(), classes
