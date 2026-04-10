@@ -92,6 +92,7 @@ class SiteSystemClient[T](SystemClient[T], ABC):
         if self._spell_list is not None and not stale:
             return self._spell_list
         async with self._spell_list_lock:
+            now = time.monotonic()
             stale = (
                 self._spell_list_fetched_at is not None
                 and (now - self._spell_list_fetched_at) > _SPELL_LIST_TTL
@@ -101,7 +102,7 @@ class SiteSystemClient[T](SystemClient[T], ABC):
                 spell_list = await self._fetch_spell_list()
                 self._spell_list = spell_list
                 self._spell_list_lower = {n.lower(): slug for n, slug in spell_list.items()}
-                self._spell_list_fetched_at = now
+                self._spell_list_fetched_at = time.monotonic()
         return self._spell_list
 
     def _exact_slug(self, name_lower: str) -> str | None:
@@ -137,15 +138,9 @@ class SiteSystemClient[T](SystemClient[T], ABC):
         )
         return [SpellMatch(name=match, slug=spell_list[match]) for match, _score, _idx in results]
 
-    @staticmethod
-    def _get_headers() -> dict[str, str]:
-        return {
-            "User-Agent": ua.random,
-        }
-
     async def _get_session(self) -> aiohttp.ClientSession:
         if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession(headers=self._get_headers())
+            self._session = aiohttp.ClientSession(headers={"User-Agent": ua.random})
         return self._session
 
     async def close(self) -> None:

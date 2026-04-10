@@ -8,6 +8,7 @@ from discord import Embed, app_commands
 from discord.ext import commands
 from loguru import logger
 
+from app.formatters.dnd5e_dnd_su import format_dnd_su_spell
 from app.formatters.dnd5e_wikidot import format_dnd5e_wikidot_spell
 from app.formatters.systems import (
     format_not_found,
@@ -16,6 +17,7 @@ from app.formatters.systems import (
     format_too_short,
 )
 from app.i18n import (
+    ARG_EDITION,
     ARG_PF2_SPELL_NAME,
     ARG_SOURCE_LANG,
     ARG_SPELL_NAME,
@@ -23,7 +25,8 @@ from app.i18n import (
     CMD_PF2_SPELL,
 )
 from app.systems.base import SystemClient
-from app.systems.dnd5e_wikidot import Dnd5eWikidotClient
+from app.systems.dnd5e_dnd_su import DndSu2024Client, DndSuClient
+from app.systems.dnd5e_wikidot import Dnd5eWikidotClient, Dnd2024WikidotClient
 from app.systems.types import ServiceUnavailableError, SpellMatch
 
 MIN_QUERY_LENGTH = 3
@@ -35,11 +38,13 @@ class Systems(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.dnd_en: Dnd5eWikidotClient = Dnd5eWikidotClient()
-        self.dnd_ru: SystemClient[Any] | None = None
+        self.dnd_en24: Dnd2024WikidotClient = Dnd2024WikidotClient()
+        self.dnd_ru: DndSuClient = DndSuClient()
+        self.dnd_ru24: DndSu2024Client = DndSu2024Client()
         self.pf2: SystemClient[Any] | None = None
 
     async def cog_unload(self) -> None:
-        for client in (self.dnd_en, self.dnd_ru, self.pf2):
+        for client in (self.dnd_en, self.dnd_en24, self.dnd_ru, self.dnd_ru24, self.pf2):
             if client:
                 await client.close()
 
@@ -93,23 +98,37 @@ class Systems(commands.Cog):
     @app_commands.describe(
         name=ARG_SPELL_NAME,
         lang=ARG_SOURCE_LANG,
+        edition=ARG_EDITION,
     )
     @app_commands.choices(
         lang=[
             app_commands.Choice(name="English", value="en"),
             app_commands.Choice(name="Русский", value="ru"),
-        ]
+        ],
+        edition=[
+            app_commands.Choice(name="D&D 5e", value="5e"),
+            app_commands.Choice(name="D&D 5.5e (2024)", value="5.5e"),
+        ],
     )
     async def dnd_spell(
         self,
         interaction: discord.Interaction,
         name: str,
         lang: app_commands.Choice[str] | None = None,
+        edition: app_commands.Choice[str] | None = None,
     ) -> None:
         await interaction.response.defer()
-        language = lang.value if lang else "en"
-        client: SystemClient[Any] | None = self.dnd_ru if language == "ru" else self.dnd_en
-        await self._do_spell_lookup(interaction, client, name, format_dnd5e_wikidot_spell)
+        is_ru = (lang.value if lang else "en") == "ru"
+        is_2024 = (edition.value if edition else "5e") == "5.5e"
+
+        if is_ru:
+            client = self.dnd_ru24 if is_2024 else self.dnd_ru
+            await self._do_spell_lookup(interaction, client, name, format_dnd_su_spell)
+        else:
+            translator = self.dnd_ru24 if is_2024 else self.dnd_ru
+            en_name = await translator.translate_to_en(name) or name
+            client = self.dnd_en24 if is_2024 else self.dnd_en
+            await self._do_spell_lookup(interaction, client, en_name, format_dnd5e_wikidot_spell)
 
     # -- Pathfinder 2e --------------------------------------------------------
 
