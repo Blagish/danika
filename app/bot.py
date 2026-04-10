@@ -5,6 +5,7 @@ from discord.ext import commands
 from loguru import logger
 
 from app.config import get_config
+from app.i18n import DanikaTranslator
 
 config = get_config()
 
@@ -32,6 +33,8 @@ class Danika(commands.Bot):
         for cog in COGS:
             await self.load_extension(cog)
             logger.debug(f"Loaded cog: {cog}")
+
+        await self.tree.set_translator(DanikaTranslator())
 
         if config.run_mode == "dev" and config.dev_guild_id:
             guild = discord.Object(id=config.dev_guild_id)

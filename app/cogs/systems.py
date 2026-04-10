@@ -15,6 +15,13 @@ from app.formatters.systems import (
     format_spell_choices,
     format_too_short,
 )
+from app.i18n import (
+    ARG_PF2_SPELL_NAME,
+    ARG_SOURCE_LANG,
+    ARG_SPELL_NAME,
+    CMD_DND_SPELL,
+    CMD_PF2_SPELL,
+)
 from app.systems.base import SystemClient
 from app.systems.dnd5e_wikidot import Dnd5eWikidotClient
 from app.systems.types import ServiceUnavailableError, SpellMatch
@@ -82,10 +89,10 @@ class Systems(commands.Cog):
 
     dnd = app_commands.Group(name="dnd", description="D&D 5e")
 
-    @dnd.command(name="spell", description="Найти заклинание D&D 5e")
+    @dnd.command(name="spell", description=CMD_DND_SPELL)
     @app_commands.describe(
-        name="Название заклинания",
-        lang="Язык источника",
+        name=ARG_SPELL_NAME,
+        lang=ARG_SOURCE_LANG,
     )
     @app_commands.choices(
         lang=[
@@ -108,8 +115,8 @@ class Systems(commands.Cog):
 
     pf2_group = app_commands.Group(name="pf2", description="Pathfinder 2e")
 
-    @pf2_group.command(name="spell", description="Найти заклинание Pathfinder 2e")
-    @app_commands.describe(name="Название заклинания (на английском)")
+    @pf2_group.command(name="spell", description=CMD_PF2_SPELL)
+    @app_commands.describe(name=ARG_PF2_SPELL_NAME)
     async def pf2_spell(self, interaction: discord.Interaction, name: str) -> None:
         await interaction.response.defer()
         await interaction.followup.send("PF2 spell lookup ещё не реализован.")

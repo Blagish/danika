@@ -3,6 +3,7 @@ from discord.ext import commands
 
 from app.dice import roll
 from app.formatters.dice import RollResponse
+from app.i18n import ARG_ROLL_EXPRESSION, CMD_ROLL
 
 
 class Dice(commands.Cog):
@@ -12,11 +13,9 @@ class Dice(commands.Cog):
     @commands.hybrid_command(
         name="roll",
         aliases=["r", "р"],
-        description="Бросить кубы. Пример: д20+3, 2*(д6+1)",
+        description=CMD_ROLL,
     )
-    @app_commands.describe(
-        expression="Выражение броска, например: д20+3, 2д6, 3*(d8+2)"
-    )
+    @app_commands.describe(expression=ARG_ROLL_EXPRESSION)
     async def roll(self, ctx: commands.Context, *, expression: str) -> None:
         try:
             results = roll(expression)
