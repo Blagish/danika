@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from typing import Any
 
 import discord
 from discord import Embed, app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 from loguru import logger
 
 from app.formatters.dnd5e_dnd_su import format_dnd_su_spell
@@ -46,10 +47,27 @@ class Systems(commands.Cog):
         self.dnd_ru24: DndSu2024Client = DndSu2024Client()
         self.pf2: SystemClient[Any] | None = None
 
+    async def cog_load(self) -> None:
+        self._refresh_spell_lists.start()
+
     async def cog_unload(self) -> None:
+        self._refresh_spell_lists.cancel()
         for client in (self.dnd_en, self.dnd_en24, self.dnd_ru, self.dnd_ru24, self.pf2):
             if client:
                 await client.close()
+
+    @tasks.loop(hours=24)
+    async def _refresh_spell_lists(self) -> None:
+        """Обновляет списки заклинаний для всех клиентов. Первый вызов — предзагрузка при старте."""
+        clients = [self.dnd_en, self.dnd_en24, self.dnd_ru, self.dnd_ru24]
+        results = await asyncio.gather(*[c.reload() for c in clients], return_exceptions=True)
+        for client, result in zip(clients, results, strict=True):
+            if isinstance(result, Exception):
+                _log.warning(f"{client.system_name}: ошибка обновления списка: {result}")
+
+    @_refresh_spell_lists.before_loop
+    async def _before_refresh_spell_lists(self) -> None:
+        await self.bot.wait_until_ready()
 
     # -- shared logic ---------------------------------------------------------
 

@@ -155,6 +155,16 @@ class SiteSystemClient[T](SystemClient[T], ABC):
             self._session = aiohttp.ClientSession(headers={"User-Agent": ua.random})
         return self._session
 
+    async def reload(self) -> None:
+        """Сбрасывает кеш и принудительно перезагружает список заклинаний."""
+        async with self._spell_list_lock:
+            self._spell_list = None
+            self._spell_list_fetched_at = None
+        try:
+            await self._get_spell_list()
+        except Exception:
+            _log.warning(f"{self.system_name}: ошибка обновления списка заклинаний")
+
     async def close(self) -> None:
         if self._session and not self._session.closed:
             await self._session.close()

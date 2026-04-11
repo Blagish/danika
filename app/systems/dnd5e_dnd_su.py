@@ -108,7 +108,7 @@ class DndSuClient(SiteSystemClient[DndSuSpell]):
                 spells[title_en] = slug
                 self._ru_to_en[title_ru.lower()] = title_en
 
-        _log.info(f"dnd.su: загружено {len(self._slug_to_ru)} заклинаний")
+        _log.info(f"{self.system_name}: загружено {len(self._slug_to_ru)} заклинаний")
         return spells
 
     async def search_spell(self, name: str) -> DndSuSpell | list[SpellMatch] | None:

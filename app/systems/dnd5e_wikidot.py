@@ -74,6 +74,7 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
             slug = str(td.a["href"])
             if name and slug:
                 spells[name] = slug
+        _log.info(f"{self.system_name}: загружено {len(spells)} заклинаний")
         return spells
 
     async def search_spell(self, name: str) -> Dnd5eWikidotSpell | list[SpellMatch] | None:
