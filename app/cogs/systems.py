@@ -24,6 +24,7 @@ from app.i18n import (
     ARG_SPELL_NAME,
     CMD_DND_SPELL,
     CMD_PF2_SPELL,
+    Section,
 )
 from app.systems.base import SystemClient
 from app.systems.dnd5e_dnd_su import DndSu2024Client, DndSuClient
@@ -36,7 +37,7 @@ _log = logger.bind(module=__name__)
 MIN_QUERY_LENGTH = 3
 
 
-class Systems(commands.Cog):
+class Systems(commands.Cog, name=Section.LOOKUP):
     """Команды поиска по игровым системам."""
 
     def __init__(self, bot: commands.Bot) -> None:

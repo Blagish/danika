@@ -3,10 +3,10 @@ from discord.ext import commands
 
 from app.dice import roll
 from app.formatters.dice import RollResponse
-from app.i18n import ARG_ROLL_EXPRESSION, CMD_ROLL
+from app.i18n import ARG_ROLL_EXPRESSION, CMD_ROLL, Section
 
 
-class Dice(commands.Cog):
+class Dice(commands.Cog, name=Section.DICE):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
