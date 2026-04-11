@@ -48,6 +48,18 @@ class SystemClient[T](ABC):
         ...
 
     @abstractmethod
+    async def fetch_spell(self, slug: str) -> T:
+        """Загружает заклинание по slug (без поиска).
+
+        Attributes:
+            slug: Идентификатор заклинания из SpellMatch.slug.
+
+        Raises:
+            ServiceUnavailableError: Сайт-источник не отвечает.
+        """
+        ...
+
+    @abstractmethod
     async def close(self) -> None:
         """Освобождает ресурсы. Переопределяется в подклассах с сессиями."""
         ...

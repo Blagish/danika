@@ -128,7 +128,7 @@ class DndSuClient(SiteSystemClient[DndSuSpell]):
         spell_list = await self._get_spell_list()
         exact_slug = self._exact_slug(name.strip().lower())
         if exact_slug:
-            return await self._fetch_and_parse(exact_slug)
+            return await self.fetch_spell(exact_slug)
 
         matches = self._fuzzy_match(name, spell_list)
         matches = self._normalize_matches(matches)
@@ -140,7 +140,7 @@ class DndSuClient(SiteSystemClient[DndSuSpell]):
         if len(matches) > 1:
             return matches
 
-        return await self._fetch_and_parse(matches[0].slug)
+        return await self.fetch_spell(matches[0].slug)
 
     def _normalize_matches(self, matches: list[SpellMatch]) -> list[SpellMatch]:
         """Заменяет английские имена на русские и убирает дубликаты по slug."""
@@ -166,8 +166,15 @@ class DndSuClient(SiteSystemClient[DndSuSpell]):
         await self._get_spell_list()
         return self._ru_to_en.get(name.strip().lower())
 
-    async def _fetch_and_parse(self, slug: str) -> DndSuSpell:
-        """Загружает и парсит страницу заклинания по slug."""
+    async def fetch_spell(self, slug: str) -> DndSuSpell:
+        """Загружает заклинание по slug.
+
+        Attributes:
+            slug: URL-путь заклинания (напр. ``/spells/fireball``).
+
+        Raises:
+            ServiceUnavailableError: Сайт недоступен.
+        """
         url = f"{self.base_url}{slug}"
         soup = await self._fetch(url)
         return self._parse_spell_page(soup, url)

@@ -94,9 +94,7 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
 
         exact_slug = self._exact_slug(name.strip().lower())
         if exact_slug:
-            spell_url = f"{self.base_url}{exact_slug}"
-            spell_soup = await self._fetch(spell_url)
-            return self._parse_spell_page(spell_soup, spell_url)
+            return await self.fetch_spell(exact_slug)
 
         matches = self._fuzzy_match(name, spell_list)
         _log.debug(f"fuzzy '{name}': {[(m.name, m.slug) for m in matches]}")
@@ -105,10 +103,20 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
         if len(matches) > 1:
             return matches
 
-        slug = matches[0].slug
+        return await self.fetch_spell(matches[0].slug)
+
+    async def fetch_spell(self, slug: str) -> Dnd5eWikidotSpell:
+        """Загружает заклинание по slug.
+
+        Attributes:
+            slug: URL-путь заклинания (напр. ``/spell:fireball``).
+
+        Raises:
+            ServiceUnavailableError: Сайт недоступен.
+        """
         spell_url = f"{self.base_url}{slug}"
-        spell_soup = await self._fetch(spell_url)
-        return self._parse_spell_page(spell_soup, spell_url)
+        soup = await self._fetch(spell_url)
+        return self._parse_spell_page(soup, spell_url)
 
     # -- парсинг страницы заклинания ------------------------------------------
 

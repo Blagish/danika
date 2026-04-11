@@ -28,6 +28,7 @@ from app.systems.base import SystemClient
 from app.systems.dnd5e_dnd_su import DndSu2024Client, DndSuClient
 from app.systems.dnd5e_wikidot import Dnd5eWikidotClient, Dnd2024WikidotClient
 from app.systems.types import ServiceUnavailableError, SpellMatch
+from app.views import LookupChoiceView
 
 MIN_QUERY_LENGTH = 3
 
@@ -82,7 +83,12 @@ class Systems(commands.Cog):
 
         match result:
             case list() as choices if all(isinstance(c, SpellMatch) for c in choices):
-                embed = format_spell_choices(choices)
+                view = LookupChoiceView(choices, client, formatter)
+                await interaction.followup.send(
+                    embed=format_spell_choices(choices),
+                    view=view,
+                )
+                return
             case None:
                 embed = format_not_found(name)
             case spell:
