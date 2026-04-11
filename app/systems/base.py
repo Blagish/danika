@@ -17,7 +17,7 @@ ua = UserAgent(browsers=["Chrome", "Firefox", "Safari", "Opera", "Edge"], platfo
 
 _SPELL_LIST_TTL: int = 86400  # секунды; 24 часа
 
-_log = logger.bind(module="systems")
+_log = logger.bind(module=__name__)
 
 
 class SystemClient[T](ABC):

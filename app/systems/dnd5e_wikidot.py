@@ -9,7 +9,7 @@ from loguru import logger
 from app.systems.base import SiteSystemClient
 from app.systems.types import SpellMatch
 
-_log = logger.bind(module="dnd5e_wikidot")
+_log = logger.bind(module=__name__)
 
 _ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]
 

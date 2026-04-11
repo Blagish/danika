@@ -1,19 +1,14 @@
 import asyncio
-import sys
+import contextlib
 
 import discord
 from loguru import logger
 
 from app.bot import Danika
 from app.config import get_config
+from app.logging import setup_logging
 
 config = get_config()
-
-
-def setup_logging() -> None:
-    logger.remove()
-    level = "DEBUG" if config.run_mode == "dev" else "INFO"
-    logger.add(sys.stderr, level=level)
 
 
 async def main() -> None:
@@ -23,11 +18,9 @@ async def main() -> None:
             await bot.start(config.discord_token)
         except discord.LoginFailure:
             logger.error("Invalid Discord token")
-            raise SystemExit(1)
+            raise SystemExit(1) from None
 
 
 if __name__ == "__main__":
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(main())
-    except KeyboardInterrupt:
-        pass

@@ -11,6 +11,8 @@ from app.formatters.systems import format_service_error
 from app.systems.base import SystemClient
 from app.systems.types import ServiceUnavailableError, SpellMatch
 
+_log = logger.bind(module=__name__)
+
 _CHOICE_TIMEOUT = 60  # секунды на выбор из кнопок
 
 
@@ -30,7 +32,7 @@ class _LookupButton(discord.ui.Button["LookupChoiceView"]):
         try:
             result = await self.view.client.fetch_spell(self.slug)
         except ServiceUnavailableError as exc:
-            logger.warning(f"Service unavailable: {exc.host}")
+            _log.warning(f"Service unavailable: {exc.host}")
             await interaction.edit_original_response(
                 embed=format_service_error(exc.host),
                 view=None,

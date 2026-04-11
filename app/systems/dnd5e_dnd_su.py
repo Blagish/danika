@@ -10,7 +10,7 @@ from loguru import logger
 from app.systems.base import SiteSystemClient
 from app.systems.types import SpellMatch
 
-_log = logger.bind(module="dnd5e_dnd_su")
+_log = logger.bind(module=__name__)
 
 _INDEX_PATH = "/piece/spells/index-list/"
 

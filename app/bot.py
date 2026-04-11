@@ -1,11 +1,11 @@
-import traceback
-
 import discord
 from discord.ext import commands
 from loguru import logger
 
 from app.config import get_config
 from app.i18n import DanikaTranslator
+
+_log = logger.bind(module=__name__)
 
 config = get_config()
 
@@ -32,7 +32,7 @@ class Danika(commands.Bot):
     async def setup_hook(self) -> None:
         for cog in COGS:
             await self.load_extension(cog)
-            logger.debug(f"Loaded cog: {cog}")
+            _log.debug(f"Loaded cog: {cog}")
 
         await self.tree.set_translator(DanikaTranslator())
 
@@ -40,13 +40,13 @@ class Danika(commands.Bot):
             guild = discord.Object(id=config.dev_guild_id)
             self.tree.copy_global_to(guild=guild)
             await self.tree.sync(guild=guild)
-            logger.info(f"Slash commands synced to dev guild {config.dev_guild_id}")
+            _log.info(f"Slash commands synced to dev guild {config.dev_guild_id}")
         else:
             await self.tree.sync()
-            logger.info("Slash commands synced globally")
+            _log.info("Slash commands synced globally")
 
     async def on_ready(self) -> None:
-        logger.info(f"Logged in as {self.user} (ID: {self.user.id if self.user else 'unknown'})")
+        _log.info(f"Logged in as {self.user} (ID: {self.user.id if self.user else 'unknown'})")
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         if hasattr(ctx.command, "on_error"):
@@ -57,10 +57,10 @@ class Danika(commands.Bot):
         if isinstance(error, commands.CommandNotFound):
             return
 
-        logger.error(f"Error in command {ctx.command}: {error}")
+        with logger.catch(reraise=False):
+            raise error
 
         if config.run_mode == "dev":
-            tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
-            await ctx.reply(f"```\n{tb[:1900]}\n```", ephemeral=True)
+            await ctx.reply(f"```\n{type(error).__name__}: {error}\n```", ephemeral=True)
         else:
             await ctx.reply("Что-то пошло не так.", ephemeral=True)

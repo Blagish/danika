@@ -30,6 +30,8 @@ from app.systems.dnd5e_wikidot import Dnd5eWikidotClient, Dnd2024WikidotClient
 from app.systems.types import ServiceUnavailableError, SpellMatch
 from app.views import LookupChoiceView
 
+_log = logger.bind(module=__name__)
+
 MIN_QUERY_LENGTH = 3
 
 
@@ -74,27 +76,28 @@ class Systems(commands.Cog):
             await interaction.followup.send(embed=format_too_short())
             return
 
-        try:
-            result = await client.search_spell(name)
-        except ServiceUnavailableError as exc:
-            logger.warning(f"Service unavailable: {exc.host}")
-            await interaction.followup.send(embed=format_service_error(exc.host))
-            return
-
-        match result:
-            case list() as choices if all(isinstance(c, SpellMatch) for c in choices):
-                view = LookupChoiceView(choices, client, formatter)
-                await interaction.followup.send(
-                    embed=format_spell_choices(choices),
-                    view=view,
-                )
+        with logger.contextualize(user=interaction.user.id, query=name):
+            try:
+                result = await client.search_spell(name)
+            except ServiceUnavailableError as exc:
+                _log.warning(f"Service unavailable: {exc.host}")
+                await interaction.followup.send(embed=format_service_error(exc.host))
                 return
-            case None:
-                embed = format_not_found(name)
-            case spell:
-                embed = formatter(spell, client.colour)
 
-        await interaction.followup.send(embed=embed)
+            match result:
+                case list() as choices if all(isinstance(c, SpellMatch) for c in choices):
+                    view = LookupChoiceView(choices, client, formatter)
+                    await interaction.followup.send(
+                        embed=format_spell_choices(choices),
+                        view=view,
+                    )
+                    return
+                case None:
+                    embed = format_not_found(name)
+                case spell:
+                    embed = formatter(spell, client.colour)
+
+            await interaction.followup.send(embed=embed)
 
     # -- D&D 5e ---------------------------------------------------------------
 
