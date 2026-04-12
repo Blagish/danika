@@ -41,6 +41,6 @@ def roll(expression: str) -> list[ScalarResult]:
             )
         ]
 
-    for result, sub_expr in zip(results, sub_exprs):
+    for result, sub_expr in zip(results, sub_exprs, strict=False):
         result.expression = sub_expr
     return results

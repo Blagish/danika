@@ -37,10 +37,11 @@ class RollValue:
     @property
     def is_ungrouped(self) -> bool:
         """True если результат — незавёрнутая группа: ровно один шаг и expr_trace == str(subtotal).
-        Такой результат можно "сложить" с соседом: константы и одиночные кубики дописываются к его трейсу."""
-        return len(self.dice_steps) == 1 and self.expr_trace == str(
-            self.dice_steps[0].subtotal
-        )
+
+        Такой результат можно "сложить" с соседом: константы и одиночные кубики
+        дописываются к его трейсу.
+        """
+        return len(self.dice_steps) == 1 and self.expr_trace == str(self.dice_steps[0].subtotal)
 
 
 @dataclass

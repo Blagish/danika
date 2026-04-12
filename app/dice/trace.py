@@ -3,7 +3,8 @@ def _bold(n: int) -> str:
 
 
 def _parens(trace: str) -> str:
-    """Оборачивает в скобки, если trace содержит сложение/вычитание или начинается как отрицательное число."""
+    """Оборачивает в скобки, если trace содержит сложение/вычитание
+    или начинается как отрицательное число."""
     if " + " in trace or " - " in trace or trace.startswith("-"):
         return f"({trace})"
     return trace

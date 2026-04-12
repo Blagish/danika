@@ -2,8 +2,9 @@ import random
 
 from lark import Transformer, v_args
 from lark.lexer import Token
+
+from app.dice.trace import _adv_trace, _bold, _parens, _pick_trace
 from app.dice.types import DiceStep, ScalarResult
-from app.dice.trace import _bold, _parens, _pick_trace, _adv_trace
 
 MAX_DICE_COUNT = 100
 MAX_DICE_SIDES = 10_000
@@ -26,7 +27,10 @@ def _roll(count: int, sides: int) -> ScalarResult:
 
 
 def _roll_pick(sides: int, n: int, take: int, highest: bool) -> ScalarResult:
-    """Кидает n кубов и оставляет `take` самых высоких (или низких) бросков. Абстракция для преимущества/помехи и будущих Nk/Nd нотаций."""
+    """Кидает n кубов и оставляет `take` самых высоких (или низких) бросков.
+
+    Абстракция для преимущества/помехи и будущих Nk/Nd нотаций.
+    """
     if errors := _validate_dice(n, sides):
         return ScalarResult(total=0, errors=errors)
     rolls = [random.randint(1, sides) for _ in range(n)]
@@ -52,9 +56,7 @@ class DiceEvaluator(Transformer):
         s = str(int(n))
         return ScalarResult(total=int(n), expr_trace=s, dice_count=0)
 
-    def dice_pick(
-        self, count: ScalarResult, sides: ScalarResult, take: Token
-    ) -> ScalarResult:
+    def dice_pick(self, count: ScalarResult, sides: ScalarResult, take: Token) -> ScalarResult:
         n = int(count.total)
         t = int(take)
         errors = count.errors + sides.errors
@@ -143,9 +145,7 @@ class DiceEvaluator(Transformer):
             return ScalarResult(
                 total=total,
                 rolls=rolls,
-                dice_steps=[
-                    DiceStep(f"{a.dice_steps[0].trace} + {b.expr_trace}", total)
-                ],
+                dice_steps=[DiceStep(f"{a.dice_steps[0].trace} + {b.expr_trace}", total)],
                 expr_trace=str(total),
                 dice_count=count,
                 errors=errors,
@@ -154,9 +154,7 @@ class DiceEvaluator(Transformer):
             return ScalarResult(
                 total=total,
                 rolls=rolls,
-                dice_steps=[
-                    DiceStep(f"{a.expr_trace} + {b.dice_steps[0].trace}", total)
-                ],
+                dice_steps=[DiceStep(f"{a.expr_trace} + {b.dice_steps[0].trace}", total)],
                 expr_trace=str(total),
                 dice_count=count,
                 errors=errors,
@@ -177,9 +175,7 @@ class DiceEvaluator(Transformer):
             return ScalarResult(
                 total=total,
                 rolls=rolls,
-                dice_steps=[
-                    DiceStep(f"{a.dice_steps[0].trace} - {b.expr_trace}", total)
-                ],
+                dice_steps=[DiceStep(f"{a.dice_steps[0].trace} - {b.expr_trace}", total)],
                 expr_trace=str(total),
                 dice_count=count,
                 errors=errors,

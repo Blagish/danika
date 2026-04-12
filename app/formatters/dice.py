@@ -22,7 +22,7 @@ class RollResponse:
     errors: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_rolls(cls, rolls: list[ScalarResult], expression: str) -> "RollResponse":
+    def from_rolls(cls, rolls: list[ScalarResult], expression: str) -> RollResponse:
         """Создаёт один блок ответа из списка результатов.
 
         Промежуточные шаги каждого выражения идут на отдельных строках.
@@ -32,9 +32,7 @@ class RollResponse:
             rolls: Результаты вычисления каждого выражения.
             expression: Полная строка, введённая пользователем.
         """
-        opening = (
-            Opening.ROLLING if any(r.dice_count for r in rolls) else Opening.COUNTING
-        )
+        opening = Opening.ROLLING if any(r.dice_count for r in rolls) else Opening.COUNTING
 
         intermediate_lines: list[str] = []
         final_parts: list[str] = []
@@ -43,9 +41,7 @@ class RollResponse:
             if roll.is_ungrouped:
                 per_roll_lines = [roll.dice_steps[0].trace]
             else:
-                per_roll_lines = [
-                    f"{step.trace} = {step.subtotal}" for step in roll.dice_steps
-                ]
+                per_roll_lines = [f"{step.trace} = {step.subtotal}" for step in roll.dice_steps]
                 if roll.dice_count:
                     per_roll_lines.append(roll.expr_trace)
 
@@ -71,7 +67,9 @@ class RollResponse:
     def __str__(self) -> str:
         comment = f" для *{self.comment}*" if self.comment else ""
         command = self.command.replace("*", r"\*")
-        return f"{self.opening.value} {command}{comment}{self._steps()}\n> **=** `{self.result}`{self._errors()}"
+        steps = self._steps()
+        errors = self._errors()
+        return f"{self.opening.value} {command}{comment}{steps}\n> **=** `{self.result}`{errors}"
 
     def _steps(self) -> str:
         return "".join(f"\n> {self.line_start} {line}" for line in self.lines)

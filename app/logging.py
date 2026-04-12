@@ -1,11 +1,11 @@
 import sys
 
-from loguru import logger
+from loguru import Record, logger
 
 from app.config import get_config
 
 
-def _log_format(record: dict) -> str:
+def _log_format(record: Record) -> str:
     """Формат лога — базовый + extra-поля если есть."""
     extra = record["extra"]
     module = extra.get("module", record["name"])
