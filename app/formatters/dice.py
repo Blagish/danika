@@ -30,7 +30,7 @@ class RollResponse:
 
         Attributes:
             rolls: Результаты вычисления каждого выражения.
-            expression: Полная строка, введённая пользователем.
+            expression: Исходное выражение, введённое пользователем.
         """
         opening = Opening.ROLLING if any(r.dice_count for r in rolls) else Opening.COUNTING
 

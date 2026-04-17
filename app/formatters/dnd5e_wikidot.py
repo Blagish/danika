@@ -23,11 +23,11 @@ _FOOTER_PIC = (
 
 
 def format_dnd5e_wikidot_spell(spell: Dnd5eWikidotSpell, colour: int) -> Embed:
-    """Эмбед для заклинания D&D 5e.
+    """Embed для заклинания D&D 5e (dnd5e.wikidot.com).
 
     Attributes:
         spell: Данные заклинания.
-        colour: Цвет эмбеда (берётся из клиента).
+        colour: Цвет Embed.
     """
     level_str = _LEVEL_NAMES.get(spell.level, f"{spell.level}-й уровень")
     subtitle = f"{level_str} • {spell.school}"

@@ -26,7 +26,7 @@ class Status(commands.Cog):
         self.rotate_status.cancel()
 
     async def _set_random_status(self) -> str:
-        """Применяет случайный статус. Возвращает итоговую строку."""
+        """Выставляет случайный статус. Возвращает строку с текстом статуса."""
         template = random.choice(self.templates)
         system = random.choice(self.systems)
         name = template.format(system=system, session=random.randint(2, 100))

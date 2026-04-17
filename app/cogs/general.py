@@ -18,7 +18,7 @@ def _cmd_desc(cmd: app_commands.Command | app_commands.Group) -> str:
 def _all_app_commands(
     cog: commands.Cog,
 ) -> list[app_commands.Command | app_commands.Group]:
-    """Возвращает все app-команды кога, включая hybrid."""
+    """Возвращает все команды модуля, включая гибридные."""
     result: list[app_commands.Command | app_commands.Group] = list(cog.__cog_app_commands__)
     for prefix_cmd in cog.get_commands():
         if isinstance(prefix_cmd, commands.HybridCommand) and prefix_cmd.app_command:
@@ -27,7 +27,7 @@ def _all_app_commands(
 
 
 def _format_params(params: list[app_commands.Parameter], locale: Locale) -> str:
-    """Форматирует список параметров команды в читаемую строку."""
+    """Форматирует список параметров команды как читаемую строку."""
     lines: list[str] = []
     for p in params:
         opt = f" {t('help.optional', locale)}" if not p.required else ""
@@ -40,11 +40,11 @@ def _format_params(params: list[app_commands.Parameter], locale: Locale) -> str:
 
 
 def _build_overview_embed(cogs: Mapping[str, commands.Cog], locale: Locale) -> discord.Embed:
-    """Собирает обзорный эмбед, сгруппированный по когам.
+    """Собирает Embed со всеми командами, сгруппированными по модулям.
 
     Attributes:
-        cogs: Словарь когов бота (bot.cogs).
-        locale: Локаль пользователя.
+        cogs: Словарь модулей бота (bot.cogs).
+        locale: Язык пользователя.
     """
     embed = discord.Embed(title=t("help.title", locale), colour=discord.Colour.blurple())
 
@@ -73,12 +73,12 @@ def _build_overview_embed(cogs: Mapping[str, commands.Cog], locale: Locale) -> d
 def _build_command_embed(
     command: str, cogs: Mapping[str, commands.Cog], locale: Locale
 ) -> discord.Embed | None:
-    """Собирает детальный эмбед для конкретной команды.
+    """Собирает Embed с описанием конкретной команды.
 
     Attributes:
         command: Имя команды.
-        cogs: Словарь когов бота.
-        locale: Локаль пользователя.
+        cogs: Словарь модулей бота.
+        locale: Язык пользователя.
     """
     if command == "roll":
         embed = discord.Embed(title=t("help.roll.title", locale), colour=discord.Colour.blurple())

@@ -18,7 +18,7 @@ def render_embed(embed: object) -> str:
 
 
 def strip_markdown(text: str) -> str:
-    """Убирает Discord markdown (bold, italic, code) для терминального вывода."""
+    """Убирает Discord markdown (bold, italic, code) для вывода в терминал."""
     text = re.sub(r"\*{1,3}([^*]+)\*{1,3}", r"\1", text)
     text = re.sub(r"_{1,2}([^_]+)_{1,2}", r"\1", text)
     text = text.replace("`", "")

@@ -17,7 +17,7 @@ class ServiceUnavailableError(Exception):
 
 @dataclass
 class SpellMatch:
-    """Элемент списка дизамбигуации.
+    """Потенциальный ответ из нескольких вариантов. Будет уточняться у пользователя.
 
     Attributes:
         name: Название заклинания.

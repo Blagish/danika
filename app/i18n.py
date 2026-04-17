@@ -26,7 +26,7 @@ ARG_PF2_SPELL_NAME = locale_str("Spell name (in English)")
 
 
 class Section(StrEnum):
-    """Секции /help — значения совпадают с name= когов."""
+    """Категории /help — значения совпадают с name= модулей."""
 
     DICE = "Dice"
     LOOKUP = "Lookup"
@@ -95,11 +95,11 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
 
 
 def t(key: str, locale: Locale) -> str:
-    """Возвращает UI-строку для указанной локали.
+    """Возвращает строку UI для указанного языка.
 
     Attributes:
         key: Ключ строки из _TRANSLATIONS.
-        locale: Локаль пользователя.
+        locale: Язык пользователя.
     """
     lang = "ru" if locale is _RU else "en"
     entry = _TRANSLATIONS.get(key, {})
@@ -110,11 +110,11 @@ class DanikaTranslator(Translator):
     async def translate(
         self, string: locale_str, locale: Locale, context: TranslationContext
     ) -> str | None:
-        """Переводит строку на запрошенную локаль.
+        """Переводит строку на указанный язык.
 
         Attributes:
             string: Переводимая строка.
-            locale: Целевая локаль.
+            locale: Целевой язык.
             context: Контекст перевода (команда, параметр и т.п.).
         """
         lang = "ru" if locale is _RU else "en"

@@ -17,13 +17,17 @@ _LEVEL_NAMES = {
     9: "9-й уровень",
 }
 
+_FOOTER_PIC = (
+    "https://cdn.discordapp.com/attachments/778998112819085352/964148715067670588/unknown.png"
+)
+
 
 def format_dnd_su_spell(spell: DndSuSpell, colour: int) -> Embed:
-    """Эмбед для заклинания D&D 5e (dnd.su).
+    """Embed для заклинания D&D 5e (dnd.su).
 
     Attributes:
         spell: Данные заклинания.
-        colour: Цвет эмбеда (берётся из клиента).
+        colour: Цвет Embed.
     """
     level_str = _LEVEL_NAMES.get(spell.level, f"{spell.level}-й уровень")
     subtitle = f"{level_str} • {spell.school}"
@@ -55,5 +59,5 @@ def format_dnd_su_spell(spell: DndSuSpell, colour: int) -> Embed:
     if spell.subclasses:
         embed.add_field(name="Подклассы", value=", ".join(spell.subclasses), inline=False)
 
-    embed.set_footer(text="dnd.su")
+    embed.set_footer(text="dnd.su", icon_url=_FOOTER_PIC)
     return embed

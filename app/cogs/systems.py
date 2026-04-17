@@ -85,7 +85,7 @@ class Systems(commands.Cog, name=Section.LOOKUP):
             interaction: Текущее взаимодействие Discord.
             client: Клиент игровой системы.
             name: Поисковый запрос.
-            formatter: Функция, превращающая данные заклинания в эмбед.
+            formatter: Функция для форматирования результата в Embed.
         """
         if client is None:
             await interaction.followup.send("Этот источник ещё не подключён.")

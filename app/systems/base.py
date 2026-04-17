@@ -27,7 +27,7 @@ class SystemClient[T](ABC):
 
     Attributes:
         system_name: Читаемое название системы (напр. "D&D 5e").
-        colour: Цвет эмбеда по умолчанию для этой системы.
+        colour: Цвет Embed по умолчанию для этой системы.
     """
 
     system_name: ClassVar[str]
