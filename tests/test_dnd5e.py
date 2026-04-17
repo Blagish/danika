@@ -105,6 +105,46 @@ class TestParseSpellPage:
 
 
 # ---------------------------------------------------------------------------
+# Nathair's Mischief — интеграция встроенной таблицы в описание
+# ---------------------------------------------------------------------------
+
+
+class TestNathairsMischief:
+    """Проверка поддержки <table> внутри описания заклинания."""
+
+    client = Dnd5eWikidotClient()
+
+    def _spell(self) -> Dnd5eWikidotSpell:
+        soup = _load("wikidot_nathairs_mischief.html")
+        return self.client._parse_spell_page(
+            soup, "https://dnd5e.wikidot.com/spell:nathairs-mischief"
+        )
+
+    def test_table_title_in_description(self) -> None:
+        spell = self._spell()
+        assert "Mischievous Surge" in spell.description
+
+    def test_row_effect_text_in_description(self) -> None:
+        spell = self._spell()
+        assert "apple pie" in spell.description
+
+    def test_table_follows_narrative_paragraph(self) -> None:
+        spell = self._spell()
+        desc = spell.description
+        narrative_idx = desc.find("Roll on the Mischievous Surge")
+        table_idx = desc.find("**Mischievous Surge**")
+        assert narrative_idx != -1
+        assert table_idx != -1
+        assert narrative_idx < table_idx
+
+    def test_all_four_rows_rendered(self) -> None:
+        spell = self._spell()
+        # Все четыре строки d4: проверим по характерным словам из эффектов.
+        for marker in ("apple pie", "flowers", "giggling", "molasses"):
+            assert marker in spell.description
+
+
+# ---------------------------------------------------------------------------
 # _parse_level_school
 # ---------------------------------------------------------------------------
 

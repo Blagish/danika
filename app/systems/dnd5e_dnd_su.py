@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from bs4 import BeautifulSoup, Tag
 from loguru import logger
 
+from app.formatters.table import parse_dnd_su_table, render_table
 from app.systems.base import SiteSystemClient
 from app.systems.types import SpellMatch
 
@@ -282,11 +283,32 @@ class DndSuClient(SiteSystemClient[DndSuSpell]):
 
     @staticmethod
     def _parse_description(div: Tag) -> tuple[str, str | None]:
-        """Парсит div[itemprop='description'] в (description, higher_levels)."""
+        """Парсит div[itemprop='description'] в (description, higher_levels).
+
+        Поддерживает inline-таблицы вида ``<h4 class="tableTitle">`` + ``<table>``:
+        заголовок h4 передаётся в таблицу, она рендерится в Markdown и встраивается
+        в описание на своей позиции.
+        """
         desc_parts: list[str] = []
         higher_levels: str | None = None
+        pending_title: str | None = None
 
-        for p in div.find_all("p"):
+        for el in div.find_all(["p", "h4", "table"], recursive=False):
+            if el.name == "h4":
+                h4_classes = el.get("class") or []
+                if "tableTitle" in h4_classes:
+                    pending_title = el.get_text(" ", strip=True) or None
+                continue
+
+            if el.name == "table":
+                rendered = render_table(parse_dnd_su_table(el, pending_title))
+                pending_title = None
+                if rendered and higher_levels is None:
+                    desc_parts.append(rendered)
+                continue
+
+            pending_title = None
+            p = el
             text = p.get_text(strip=True)
             if not text:
                 continue
@@ -300,7 +322,8 @@ class DndSuClient(SiteSystemClient[DndSuSpell]):
                 higher_levels = hl
                 continue
 
-            desc_parts.append(text)
+            if higher_levels is None:
+                desc_parts.append(text)
 
         return "\n\n".join(desc_parts), higher_levels
 

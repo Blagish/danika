@@ -172,6 +172,43 @@ class TestParseSpellPage:
 
 
 # ---------------------------------------------------------------------------
+# Натайрово озорство — интеграция встроенной таблицы в описание
+# ---------------------------------------------------------------------------
+
+
+class TestNathairsMischiefRu:
+    """Проверка поддержки <table> + <h4 class='tableTitle'> внутри описания."""
+
+    client = DndSuClient()
+
+    def _spell(self) -> DndSuSpell:
+        soup = _load("dnd_su_nathairs_mischief.html")
+        return self.client._parse_spell_page(soup, "https://dnd.su/spells/3816-nathairs-mischief/")
+
+    def test_table_title_in_description(self) -> None:
+        spell = self._spell()
+        assert "Озорной порыв" in spell.description
+
+    def test_row_effect_text_in_description(self) -> None:
+        spell = self._spell()
+        assert "яблочного пирога" in spell.description
+
+    def test_table_follows_narrative_paragraph(self) -> None:
+        spell = self._spell()
+        desc = spell.description
+        narrative_idx = desc.find("по таблице")
+        table_idx = desc.find("**Озорной порыв**")
+        assert narrative_idx != -1
+        assert table_idx != -1
+        assert narrative_idx < table_idx
+
+    def test_all_four_rows_rendered(self) -> None:
+        spell = self._spell()
+        for marker in ("яблочного пирога", "Букеты цветов", "смеяться", "патоки"):
+            assert marker in spell.description
+
+
+# ---------------------------------------------------------------------------
 # search_spell — интеграция с замоканным _fetch
 # ---------------------------------------------------------------------------
 

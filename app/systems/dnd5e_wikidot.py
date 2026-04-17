@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from bs4 import BeautifulSoup, Tag
 from loguru import logger
 
+from app.formatters.table import parse_wikidot_table, render_table
 from app.systems.base import SiteSystemClient
 from app.systems.types import SpellMatch
 
@@ -126,14 +127,20 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
         name = title_el.get_text().strip() if title_el else ""
 
         card = soup.find("div", attrs={"id": "page-content"})
-        ps: list[Tag] = card.find_all("p") if card else []
+        elements: list[Tag] = card.find_all(["p", "table"], recursive=False) if card else []
 
-        # Первый <p> — источник ("Source Player's Handbook p. 241")
+        # Первый <p> — источник ("Source Player's Handbook p. 241").
         source: str | None = None
-        if ps:
-            raw = ps[0].get_text().strip()
-            space_idx = raw.find(" ")
-            source = raw[space_idx:].strip() if space_idx != -1 else raw
+        rest: list[Tag] = []
+        source_taken = False
+        for el in elements:
+            if not source_taken and el.name == "p":
+                raw = el.get_text().strip()
+                space_idx = raw.find(" ")
+                source = raw[space_idx:].strip() if space_idx != -1 else raw
+                source_taken = True
+                continue
+            rest.append(el)
 
         level, school, ritual = 0, "", False
         casting_time = range_val = components = duration = ""
@@ -142,7 +149,15 @@ class Dnd5eWikidotClient(SiteSystemClient[Dnd5eWikidotSpell]):
         classes: list[str] = []
         in_desc = False
 
-        for p in ps[1:]:
+        for el in rest:
+            if el.name == "table":
+                if in_desc and higher_levels is None:
+                    rendered = render_table(parse_wikidot_table(el))
+                    if rendered:
+                        desc_parts.append(rendered)
+                continue
+
+            p = el
             text = p.get_text(" ", strip=True)
             strongs = [s.get_text().lower() for s in p.find_all("strong")]
 
@@ -243,15 +258,21 @@ class Dnd2024WikidotClient(Dnd5eWikidotClient):
         name = title_el.get_text().strip() if title_el else ""
 
         card = soup.find("div", attrs={"id": "page-content"})
-        ps: list[Tag] = card.find_all("p") if card else []
+        elements: list[Tag] = card.find_all(["p", "table"], recursive=False) if card else []
 
         source: str | None = None
-        if ps:
-            raw = ps[0].get_text().strip()
-            if raw.lower().startswith("source:"):
-                source = raw[len("source:") :].strip()
-            elif raw.lower().startswith("source"):
-                source = raw[len("source") :].strip()
+        rest: list[Tag] = []
+        source_taken = False
+        for el in elements:
+            if not source_taken and el.name == "p":
+                raw = el.get_text().strip()
+                if raw.lower().startswith("source:"):
+                    source = raw[len("source:") :].strip()
+                elif raw.lower().startswith("source"):
+                    source = raw[len("source") :].strip()
+                source_taken = True
+                continue
+            rest.append(el)
 
         level, school, ritual = 0, "", False
         casting_time = range_val = components = duration = ""
@@ -260,7 +281,15 @@ class Dnd2024WikidotClient(Dnd5eWikidotClient):
         classes: list[str] = []
         in_desc = False
 
-        for p in ps[1:]:
+        for el in rest:
+            if el.name == "table":
+                if in_desc and higher_levels is None:
+                    rendered = render_table(parse_wikidot_table(el))
+                    if rendered:
+                        desc_parts.append(rendered)
+                continue
+
+            p = el
             text = p.get_text(" ", strip=True)
             strongs = [s.get_text().lower() for s in p.find_all("strong")]
 
